@@ -17,6 +17,7 @@
       appearance:none; border:0; cursor:pointer; padding:12px 14px; border-radius:14px;
       font-weight:700; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;
     }
+    button{ type:button; }
     .primary { background:#e11d48; color:#fff; }
     .secondary { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.18); }
     .note { margin-top:12px; font-size:12px; opacity:.75; }
@@ -29,7 +30,7 @@
       <h1>Ödeme Bilgileri</h1>
 
       <div class="label">Ünvan</div>
-      <div class="value" id="title">SD Global Güzellik Merkezi ve Ticaret Limited Şirketi</div>
+      <div class="value">SD Global Güzellik Merkezi ve Ticaret Limited Şirketi</div>
 
       <div class="label">IBAN</div>
       <div class="ibanBox">
@@ -37,49 +38,81 @@
       </div>
 
       <div class="btns">
-        <button class="primary" id="copyBtn">IBAN Kopyala</button>
-        <button class="secondary" id="shareBtn">Paylaş</button>
+        <button class="primary" id="copyBtn" type="button">IBAN Kopyala</button>
+        <button class="secondary" id="shareBtn" type="button">Paylaş</button>
         <a class="btn secondary" id="whatsBtn" target="_blank" rel="noopener">WhatsApp</a>
       </div>
 
       <div class="toast" id="toast">Kopyalandı ✅</div>
-      <div class="note">Not: “Paylaş” bazı cihazlarda görünmeyebilir; o zaman WhatsApp butonunu kullan.</div>
+      <div class="note">Not: iPhone’da “Paylaş” bazen kısıtlı olabilir. Olmazsa WhatsApp veya kopyala seçtirme çıkar.</div>
     </div>
   </div>
 
   <script>
-    // DÜZ FORMAT (boşluksuz) IBAN
     const ibanPlain  = "TR920001001203977053745001";
-    // GÖRÜNÜR FORMAT (boşluklu) IBAN
     const ibanPretty = "TR92 0001 0012 0397 7053 7450 01";
-    const title = "SD Global Güzellik Merkezi ve Ticaret Limited Şirketi";
+    const titleText  = "SD Global Güzellik Merkezi ve Ticaret Limited Şirketi";
 
     const toast = document.getElementById("toast");
-    function showToast(){
+    function showToast(msg){
+      toast.textContent = msg || "Kopyalandı ✅";
       toast.style.display = "block";
       clearTimeout(window.__t);
-      window.__t = setTimeout(()=> toast.style.display="none", 1500);
+      window.__t = setTimeout(()=> toast.style.display="none", 1700);
+    }
+
+    async function copyText(text){
+      // Secure context (https) + izin varsa
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      // Fallback: textarea
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
     }
 
     document.getElementById("copyBtn").addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(ibanPlain);
-        showToast();
+        const ok = await copyText(ibanPlain);
+        if (ok) showToast("IBAN kopyalandı ✅");
+        else {
+          // Son çare: seçtir
+          prompt("Kopyalamak için IBAN'ı seçip kopyalayın:", ibanPlain);
+        }
       } catch (e) {
-        const ta = document.createElement("textarea");
-        ta.value = ibanPlain;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        showToast();
+        prompt("Kopyalamak için IBAN'ı seçip kopyalayın:", ibanPlain);
       }
     });
 
     document.getElementById("shareBtn").addEventListener("click", async () => {
-      const text = `Ünvan: ${title}\nIBAN: ${ibanPretty}`;
-      if (navigator.share) {
-        try { await navigator.share({ title: "Ödeme Bilgileri", text }); } catch(e) {}
-      } else {
-        try { await navigator.clipboard.writeText(text); showToast(); } catch(e) {}
-        alert("Paylaş özelliği yok. Bilgileri kopyaladım, yapıştırabili
+      const text = `Ünvan: ${titleText}\nIBAN: ${ibanPretty}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Ödeme Bilgileri", text });
+        } else {
+          const ok = await copyText(text);
+          if (ok) showToast("Bilgiler kopyalandı ✅");
+          else prompt("Bilgileri kopyalayın:", text);
+        }
+      } catch (e) {
+        // Paylaş iptal edilirse vs.
+        const ok = await copyText(text);
+        if (ok) showToast("Bilgiler kopyalandı ✅");
+        else prompt("Bilgileri kopyalayın:", text);
+      }
+    });
+
+    const waText = encodeURIComponent(`Ünvan: ${titleText}\nIBAN: ${ibanPretty}`);
+    document.getElementById("whatsBtn").href = `https://wa.me/?text=${waText}`;
+  </script>
+</body>
+</html>
