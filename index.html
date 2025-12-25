@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IBAN - SD Global</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1220; color:#fff; margin:0; }
+    .wrap { max-width:560px; margin:0 auto; padding:22px; }
+    .card { background:#111b31; border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+    h1 { font-size:20px; margin:0 0 10px; }
+    .label { font-size:12px; opacity:.75; margin-top:14px; }
+    .value { font-size:16px; font-weight:700; line-height:1.35; word-break:break-word; }
+    .ibanBox { margin-top:10px; padding:14px; background:#0b1220; border:1px dashed rgba(255,255,255,.25); border-radius:14px; }
+    .btns { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+    button, a.btn {
+      appearance:none; border:0; cursor:pointer; padding:12px 14px; border-radius:14px;
+      font-weight:700; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .primary { background:#e11d48; color:#fff; }
+    .secondary { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.18); }
+    .note { margin-top:12px; font-size:12px; opacity:.75; }
+    .toast { margin-top:10px; font-size:13px; color:#a7f3d0; display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Ödeme Bilgileri</h1>
+
+      <div class="label">Ünvan</div>
+      <div class="value" id="title">SD Global Güzellik Merkezi ve Ticaret Limited Şirketi</div>
+
+      <div class="label">IBAN</div>
+      <div class="ibanBox">
+        <div class="value" id="ibanPretty">TR92 0001 0012 0397 7053 7450 01</div>
+      </div>
+
+      <div class="btns">
+        <button class="primary" id="copyBtn">IBAN Kopyala</button>
+        <button class="secondary" id="shareBtn">Paylaş</button>
+        <a class="btn secondary" id="whatsBtn" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+
+      <div class="toast" id="toast">Kopyalandı ✅</div>
+      <div class="note">Not: “Paylaş” bazı cihazlarda görünmeyebilir; o zaman WhatsApp butonunu kullan.</div>
+    </div>
+  </div>
+
+  <script>
+    // DÜZ FORMAT (boşluksuz) IBAN
+    const ibanPlain  = "TR920001001203977053745001";
+    // GÖRÜNÜR FORMAT (boşluklu) IBAN
+    const ibanPretty = "TR92 0001 0012 0397 7053 7450 01";
+    const title = "SD Global Güzellik Merkezi ve Ticaret Limited Şirketi";
+
+    const toast = document.getElementById("toast");
+    function showToast(){
+      toast.style.display = "block";
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> toast.style.display="none", 1500);
+    }
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(ibanPlain);
+        showToast();
+      } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = ibanPlain;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast();
+      }
+    });
+
+    document.getElementById("shareBtn").addEventListener("click", async () => {
+      const text = `Ünvan: ${title}\nIBAN: ${ibanPretty}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: "Ödeme Bilgileri", text }); } catch(e) {}
+      } else {
+        try { await navigator.clipboard.writeText(text); showToast(); } catch(e) {}
+        alert("Paylaş özelliği yok. Bilgileri kopyaladım, yapıştırabili
